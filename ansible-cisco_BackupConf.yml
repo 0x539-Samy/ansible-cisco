@@ -1,0 +1,35 @@
+---
+- hosts: all
+  gather_facts: true
+  connection: local
+
+  vars_prompt:
+  - name: "mgmt_username"
+    prompt: "Cisco Username"
+    private: no
+  - name: "mgmt_password"
+    prompt: "Cisco Password"
+
+  vars:
+    time: "{{ lookup('pipe', 'date  +%Y-%m-%d') }}"
+
+ 
+  tasks:
+  - name: connecting to devices
+    set_fact:
+      provider:
+        host: "{{ inventory_hostname }}"
+        username: "{{ mgmt_username }}"
+        password: "{{ mgmt_password }}"
+
+  - name: Show run of all devices
+    ios_command:
+      provider: "{{ provider }}"
+      commands: show run 
+      host: "{{ ansible_host }}"
+    register: config
+ 
+  - name: backup conf of cisco devices in folder "backups"
+    copy: 
+      content: "{{ config.stdout[0] }}"
+      dest: "./backups/[{{ time }}].show_run_{{ inventory_hostname }}.txt"
